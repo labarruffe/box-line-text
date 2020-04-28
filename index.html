@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+<meta charset=utf-8 /> 
+<meta name=viewport content="width=device-width, initial-scale=1"/>
+<title>Box Line Text</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<style>
+html,body {
+  height:100%;
+  width:100%;
+  z-index:0;
+  overflow:hidden;
+}
+* {
+  position:absolute;
+  margin:0;
+  padding:0;
+}
+section {
+  border:2px solid #777;
+  border-radius:10px;
+}
+p {
+  z-index:1;
+  font:32px Noto Sans CJK JP, arial;
+  color:#333;
+  padding:0 .5em;
+  line-height:64px;
+  outline:none;
+}
+</style>
+</head>
+<body>
+<script>
+function createElement(p1, p2, temporary=true) {
+  document.querySelectorAll('body>*:empty').forEach(e => e.remove())
+
+  let e = document.createElement('section')
+  let snap = s => Math.round(s / 64) * 64 - 2 + 'px'
+  ;[e.style.width, e.style.height] = p1.map((s, i) => snap(Math.abs(s - p2[i])))
+
+  let text = document.createElement('p')
+  text.contentEditable = 'true'
+  if (!temporary) e.append(text)
+
+  if (!e.style.width && !e.style.height) e = text
+  if (e.style.width && !e.style.height) text.style.top = '-66px'
+
+  ;[e.style.left, e.style.top] = p1.map((s, i) => snap(Math.min(s, p2[i])))
+  document.body.append(e)
+  text.focus()
+}
+
+function eraseElement(target) {
+  erasing = true
+  if (target != document.body) target.remove()
+}
+
+function getPosition(e) {
+  e = e.touches ? e.touches[0] : e
+  return [e.clientX, e.clientY]
+}
+
+function mousedown(e) {
+  if (e.shiftKey || e.target.tagName != 'P') {
+    e.preventDefault() // Prevents content selection while dragging
+
+    if (e.shiftKey) eraseElement(e.target)
+    else dragstart = getPosition(e)
+  }
+}
+document.addEventListener('mousedown', mousedown)
+document.addEventListener('touchstart', mousedown)
+
+function mousemove(e) {
+  if (window.erasing) eraseElement(e.target)
+  else if (window.dragstart) createElement(getPosition(e), dragstart)
+}
+document.addEventListener('mousemove', mousemove)
+document.addEventListener('touchmove', mousemove)
+
+function mouseup(e) {
+  if (window.erasing || !dragstart) erasing = false
+  else createElement(dragstart, getPosition(e), false)
+
+  dragstart = false
+}
+document.addEventListener('mouseup', mouseup)
+document.addEventListener('touchend', mouseup)
+
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key == 'z') {
+    document.querySelector('body>:last-child').remove()
+    e.preventDefault() // Prevents user agent text undo
+  }
+})
+</script>
+</body>
+</html>
